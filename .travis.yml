@@ -1,0 +1,7 @@
+language: go
+
+script: go test
+
+matrix:
+  include:
+    - go: 1.13.x
