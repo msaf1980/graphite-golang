@@ -3,7 +3,7 @@
 //     package mylib
 //
 //     import (
-//         "github.com/marpaia/graphite-golang"
+//         "github.com/msaf1980/graphite-golang"
 //         "log"
 //     )
 //
