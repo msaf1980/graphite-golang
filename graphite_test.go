@@ -13,10 +13,9 @@ const NOP = "nop"
 
 // Change these to be your own graphite server if you so please
 var graphiteHost = "carbon.hostedgraphite.com"
-var graphitePort = 2003
 
 func TestNewGraphite(t *testing.T) {
-	gh, err := NewGraphite(graphiteHost, graphitePort)
+	gh, err := NewGraphite(graphiteHost)
 	if err != nil {
 		t.Error(err)
 	}
@@ -28,7 +27,7 @@ func TestNewGraphite(t *testing.T) {
 
 func TestNewGraphiteWithMetricPrefix(t *testing.T) {
 	prefix := "test"
-	gh, err := NewGraphiteWithMetricPrefix(graphiteHost, graphitePort, prefix)
+	gh, err := NewGraphiteWithMetricPrefix(graphiteHost, prefix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -39,7 +38,7 @@ func TestNewGraphiteWithMetricPrefix(t *testing.T) {
 }
 
 func TestNewGraphiteUDP(t *testing.T) {
-	gh, err := NewGraphiteUDP(graphiteHost, graphitePort)
+	gh, err := NewGraphiteUDP(graphiteHost)
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,7 +49,7 @@ func TestNewGraphiteUDP(t *testing.T) {
 }
 
 func TestGraphiteFactoryTCP(t *testing.T) {
-	gr, err := GraphiteFactory(TCP, graphiteHost, graphitePort, "")
+	gr, err := GraphiteFactory(TCP, graphiteHost, "")
 
 	if err != nil {
 		t.Error(err)
@@ -63,7 +62,7 @@ func TestGraphiteFactoryTCP(t *testing.T) {
 
 func TestGraphiteFactoryTCPWithPrefix(t *testing.T) {
 	prefix := "test"
-	gr, err := GraphiteFactory(TCP, graphiteHost, graphitePort, prefix)
+	gr, err := GraphiteFactory(TCP, graphiteHost, prefix)
 
 	if err != nil {
 		t.Error(err)
@@ -81,7 +80,7 @@ func TestGraphiteFactoryTCPWithPrefix(t *testing.T) {
 }
 
 func TestGraphiteFactoryUDP(t *testing.T) {
-	gr, err := GraphiteFactory(UDP, graphiteHost, graphitePort, "")
+	gr, err := GraphiteFactory(UDP, graphiteHost, "")
 
 	if err != nil {
 		t.Error(err)
@@ -93,7 +92,7 @@ func TestGraphiteFactoryUDP(t *testing.T) {
 }
 
 func TestGraphiteFactoryNop(t *testing.T) {
-	gr, err := GraphiteFactory(NOP, graphiteHost, graphitePort, "")
+	gr, err := GraphiteFactory(NOP, graphiteHost, "")
 
 	if err != nil {
 		t.Error(err)

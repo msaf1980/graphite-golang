@@ -14,13 +14,13 @@
 //
 //         // try to connect a graphite server
 //         if config.GraphiteEnabled {
-//             Graphite, err = graphite.NewGraphite(config.Graphite.Host, config.Graphite.Port)
+//             Graphite, err = graphite.NewGraphite(config.Graphite.Address)
 //         } else {
-//             Graphite = graphite.NewGraphiteNop(config.Graphite.Host, config.Graphite.Port)
+//             Graphite = graphite.NewGraphiteNop(config.Graphite.Address)
 //         }
 //         // if you couldn't connect to graphite, use a nop
 //         if err != nil {
-//             Graphite = graphite.NewGraphiteNop(config.Graphite.Host, config.Graphite.Port)
+//             Graphite = graphite.NewGraphiteNop(config.Graphite.Adress)
 //         }
 //
 //         log.Printf("Loaded Graphite connection: %#v", Graphite)

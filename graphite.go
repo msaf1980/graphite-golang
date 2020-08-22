@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"time"
 )
 
 // Graphite is a struct that defines the relevant properties of a graphite
 // connection
 type Graphite struct {
-	Host     string
-	Port     int
-	Protocol string
-	Timeout  time.Duration
-	Prefix   string
-	conn     net.Conn
-	nop      bool
+	Address    string
+	Protocol   string
+	Timeout    time.Duration
+	Prefix     string
+	conn       net.Conn
+	nop        bool
 	DisableLog bool
 }
 
@@ -41,8 +41,6 @@ func (graphite *Graphite) Connect() error {
 			graphite.conn.Close()
 		}
 
-		address := fmt.Sprintf("%s:%d", graphite.Host, graphite.Port)
-
 		if graphite.Timeout == 0 {
 			graphite.Timeout = defaultTimeout * time.Second
 		}
@@ -51,13 +49,13 @@ func (graphite *Graphite) Connect() error {
 		var conn net.Conn
 
 		if graphite.Protocol == "udp" {
-			udpAddr, err := net.ResolveUDPAddr("udp", address)
+			udpAddr, err := net.ResolveUDPAddr("udp", graphite.Address)
 			if err != nil {
 				return err
 			}
 			conn, err = net.DialUDP(graphite.Protocol, nil, udpAddr)
 		} else {
-			conn, err = net.DialTimeout(graphite.Protocol, address, graphite.Timeout)
+			conn, err = net.DialTimeout(graphite.Protocol, graphite.Address, graphite.Timeout)
 		}
 
 		if err != nil {
@@ -147,39 +145,43 @@ func (graphite *Graphite) SimpleSend(stat string, value string) error {
 }
 
 // NewGraphite is a factory method that's used to create a new Graphite
-func NewGraphite(host string, port int) (*Graphite, error) {
-	return GraphiteFactory("tcp", host, port, "")
+func NewGraphite(address string) (*Graphite, error) {
+	return GraphiteFactory("tcp", address, "")
 }
 
 // NewGraphiteWithMetricPrefix is a factory method that's used to create a new Graphite with a metric prefix
-func NewGraphiteWithMetricPrefix(host string, port int, prefix string) (*Graphite, error) {
-	return GraphiteFactory("tcp", host, port, prefix)
+func NewGraphiteWithMetricPrefix(address string, prefix string) (*Graphite, error) {
+	return GraphiteFactory("tcp", address, prefix)
 }
 
 // When a UDP connection to Graphite is required
-func NewGraphiteUDP(host string, port int) (*Graphite, error) {
-	return GraphiteFactory("udp", host, port, "")
+func NewGraphiteUDP(address string) (*Graphite, error) {
+	return GraphiteFactory("udp", address, "")
 }
 
 // NewGraphiteNop is a factory method that returns a Graphite struct but will
 // not actually try to send any packets to a remote host and, instead, will just
 // log. This is useful if you want to use Graphite in a project but don't want
 // to make Graphite a requirement for the project.
-func NewGraphiteNop(host string, port int) *Graphite {
-	graphiteNop, _ := GraphiteFactory("nop", host, port, "")
+func NewGraphiteNop(address string) *Graphite {
+	graphiteNop, _ := GraphiteFactory("nop", address, "")
 	return graphiteNop
 }
 
-func GraphiteFactory(protocol string, host string, port int, prefix string) (*Graphite, error) {
+func GraphiteFactory(protocol string, address string, prefix string) (*Graphite, error) {
 	var graphite *Graphite
+
+	if strings.IndexRune(address, ':') == -1 {
+		address += ":2003"
+	}
 
 	switch protocol {
 	case "tcp":
-		graphite = &Graphite{Host: host, Port: port, Protocol: "tcp", Prefix: prefix}
+		graphite = &Graphite{Address: address, Protocol: "tcp", Prefix: prefix}
 	case "udp":
-		graphite = &Graphite{Host: host, Port: port, Protocol: "udp", Prefix: prefix}
+		graphite = &Graphite{Address: address, Protocol: "udp", Prefix: prefix}
 	case "nop":
-		graphite = &Graphite{Host: host, Port: port, nop: true}
+		graphite = &Graphite{Address: address, nop: true}
 	}
 
 	err := graphite.Connect()
