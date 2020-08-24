@@ -185,9 +185,5 @@ func GraphiteFactory(protocol string, address string, prefix string) (*Graphite,
 	}
 
 	err := graphite.Connect()
-	if err != nil {
-		return nil, err
-	}
-
-	return graphite, nil
+	return graphite, err
 }
