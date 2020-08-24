@@ -135,12 +135,23 @@ func (graphite *Graphite) sendMetrics(metrics []Metric) error {
 // The SimpleSend method can be used to just pass a metric name and value and
 // have it be sent to the Graphite host with the current timestamp
 func (graphite *Graphite) SimpleSend(stat string, value string) error {
-	metrics := make([]Metric, 1)
-	metrics[0] = NewMetric(stat, value, time.Now().Unix())
-	err := graphite.sendMetrics(metrics)
-	if err != nil {
-		return err
+	var metric_name string
+	metric := NewMetric(stat, value, time.Now().Unix())
+	if graphite.Prefix != "" {
+		metric_name = fmt.Sprintf("%s.%s", graphite.Prefix, metric.Name)
+	} else {
+		metric_name = metric.Name
 	}
+	if graphite.Protocol == "udp" {
+		fmt.Fprintf(graphite.conn, "%s %s %d\n", metric_name, metric.Value, metric.Timestamp)
+	} else if graphite.Protocol == "tcp" {
+		s := fmt.Sprintf("%s %s %d\n", metric_name, metric.Value, metric.Timestamp)
+		_, err := graphite.conn.Write([]byte(s))
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
