@@ -75,6 +75,9 @@ func (graphite *Graphite) Connect() error {
 
 // Given a Graphite struct, Disconnect closes the Graphite.conn field
 func (graphite *Graphite) Disconnect() error {
+	if graphite.conn == nil {
+		return nil
+	}
 	err := graphite.conn.Close()
 	graphite.conn = nil
 	return err
