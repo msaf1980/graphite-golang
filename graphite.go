@@ -33,6 +33,11 @@ func (graphite *Graphite) IsNop() bool {
 	return false
 }
 
+// Return conn state
+func (graphite *Graphite) IsConnected() bool {
+	return graphite.conn != nil
+}
+
 // Given a Graphite struct, Connect populates the Graphite.conn field with an
 // appropriate TCP connection
 func (graphite *Graphite) Connect() error {
