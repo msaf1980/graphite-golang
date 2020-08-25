@@ -78,21 +78,12 @@ func (graphite *Graphite) Disconnect() error {
 // Given a Metric struct, the SendMetric method sends the supplied metric to the
 // Graphite connection that the method is called upon
 func (graphite *Graphite) SendMetric(metric Metric) error {
-	metrics := make([]Metric, 1)
-	metrics[0] = metric
-
-	return graphite.sendMetrics(metrics)
+	return graphite.Send(metric.Name, metric.Value, metric.Timestamp)
 }
 
 // Given a slice of Metrics, the SendMetrics method sends the metrics, as a
 // batch, to the Graphite connection that the method is called upon
 func (graphite *Graphite) SendMetrics(metrics []Metric) error {
-	return graphite.sendMetrics(metrics)
-}
-
-// sendMetrics is an internal function that is used to write to the TCP
-// connection in order to communicate metrics to the remote Graphite host
-func (graphite *Graphite) sendMetrics(metrics []Metric) error {
 	if graphite.IsNop() {
 		if !graphite.DisableLog {
 			for _, metric := range metrics {
@@ -132,20 +123,67 @@ func (graphite *Graphite) sendMetrics(metrics []Metric) error {
 	return nil
 }
 
+// Given a Metric struct, the SendMetric method sends the supplied metric to the
+// Graphite connection that the method is called upon
+func (graphite *Graphite) SendMetricPtr(metric *Metric) error {
+	return graphite.Send(metric.Name, metric.Value, metric.Timestamp)
+}
+
+// Given a slice of Metrics, the SendMetrics method sends the metrics, as a
+// batch, to the Graphite connection that the method is called upon
+func (graphite *Graphite) SendMetricPtrs(metrics []*Metric) error {
+	if graphite.IsNop() {
+		if !graphite.DisableLog {
+			for _, metric := range metrics {
+				log.Printf("Graphite: %s\n", metric)
+			}
+		}
+		return nil
+	}
+	zeroed_metric := Metric{} // ignore unintialized metrics
+	buf := bytes.NewBufferString("")
+	for _, metric := range metrics {
+		if metric == nil || *metric == zeroed_metric {
+			continue // ignore unintialized metrics
+		}
+		if metric.Timestamp == 0 {
+			metric.Timestamp = time.Now().Unix()
+		}
+		metric_name := ""
+		if graphite.Prefix != "" {
+			metric_name = fmt.Sprintf("%s.%s", graphite.Prefix, metric.Name)
+		} else {
+			metric_name = metric.Name
+		}
+		if graphite.Protocol == "udp" {
+			fmt.Fprintf(graphite.conn, "%s %s %d\n", metric_name, metric.Value, metric.Timestamp)
+			continue
+		}
+		buf.WriteString(fmt.Sprintf("%s %s %d\n", metric_name, metric.Value, metric.Timestamp))
+	}
+	if graphite.Protocol == "tcp" {
+		_, err := graphite.conn.Write(buf.Bytes())
+		//fmt.Print("Sent msg:", buf.String(), "'")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // The SimpleSend method can be used to just pass a metric name and value and
 // have it be sent to the Graphite host with the current timestamp
-func (graphite *Graphite) SimpleSend(stat string, value string) error {
+func (graphite *Graphite) Send(stat string, value string, timestamp int64) error {
 	var metric_name string
-	metric := NewMetric(stat, value, time.Now().Unix())
 	if graphite.Prefix != "" {
-		metric_name = fmt.Sprintf("%s.%s", graphite.Prefix, metric.Name)
+		metric_name = fmt.Sprintf("%s.%s", graphite.Prefix, stat)
 	} else {
-		metric_name = metric.Name
+		metric_name = stat
 	}
 	if graphite.Protocol == "udp" {
-		fmt.Fprintf(graphite.conn, "%s %s %d\n", metric_name, metric.Value, metric.Timestamp)
+		fmt.Fprintf(graphite.conn, "%s %s %d\n", metric_name, value, timestamp)
 	} else if graphite.Protocol == "tcp" {
-		s := fmt.Sprintf("%s %s %d\n", metric_name, metric.Value, metric.Timestamp)
+		s := fmt.Sprintf("%s %s %d\n", metric_name, value, timestamp)
 		_, err := graphite.conn.Write([]byte(s))
 		if err != nil {
 			return err
@@ -153,6 +191,12 @@ func (graphite *Graphite) SimpleSend(stat string, value string) error {
 	}
 
 	return nil
+}
+
+// The SimpleSend method can be used to just pass a metric name and value and
+// have it be sent to the Graphite host with the current timestamp
+func (graphite *Graphite) SimpleSend(stat string, value string) error {
+	return graphite.Send(stat, value, time.Now().Unix())
 }
 
 // NewGraphite is a factory method that's used to create a new Graphite
